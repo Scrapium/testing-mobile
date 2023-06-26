@@ -1,0 +1,52 @@
+import time
+import random
+import string
+import hmac
+import hashlib
+import base64
+import urllib.parse
+
+# Your credentials
+consumer_key = '3rJOl1ODzm9yZy63FACdg'
+consumer_secret = '5jPoQ5kQvMJFDYRNE8bQ4rHuds4xJqhvgNJM4awaE8'
+
+# Generate a nonce
+nonce = ''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)])
+
+# Get the timestamp
+timestamp = str(int(time.time()))
+
+# Define the request method, URL, and parameters
+method = 'GET'  # or GET, etc.
+url = 'https://api.twitter.com/graphql/TFwspiiwvDFwJDqgs6-Bcw/SearchTimeline'  # replace with your URL
+params = {
+    'oauth_consumer_key': consumer_key,
+    'oauth_nonce': nonce,
+    'oauth_signature_method': 'HMAC-SHA1',
+    'oauth_timestamp': timestamp,
+    'oauth_version': '1.0',
+    # add any additional parameters here
+}
+
+# Create the signature base string
+param_str = '&'.join([f'{k}={params[k]}' for k in sorted(params)])
+base_str = f'{method}&{urllib.parse.quote(url, safe="")}\
+&{urllib.parse.quote(param_str, safe="")}'
+
+# Create the signing key
+signing_key = f'{urllib.parse.quote(consumer_secret, safe="")}&'
+
+# Generate the signature
+signature = base64.b64encode(hmac.new(
+    bytes(signing_key , 'UTF-8'),
+    bytes(base_str , 'UTF-8'),
+    hashlib.sha1
+).digest()).decode()
+
+# Include the signature in the original parameters
+params['oauth_signature'] = signature
+
+# Format the parameters as an Authorization header
+auth_header = 'OAuth ' + ', '.join([f'{k}="{params[k]}"' for k in params])
+
+print(auth_header)
