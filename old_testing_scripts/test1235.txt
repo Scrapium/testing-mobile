@@ -1,0 +1,112 @@
+# VERY BROKEN
+
+import time #To generate the OAuth timestamp
+import urllib.parse #To URLencode the parameter string
+import hmac #To implement HMAC algorithm
+import hashlib #To generate SHA256 digest
+from base64 import b64encode #To encode binary data into Base64
+import binascii #To convert data into ASCII
+import requests #To make HTTP requests
+import random
+from requests_oauthlib import OAuth1Session
+import string
+import uuid
+import json
+
+# OAuth oauth_signature="OSpMkX7U2JgVtNeKIve4lXhb1T4%3D", 
+# oauth_nonce="44189BB8-FA49-41B6-B9AB-2EC7D46416C8", 
+# [v] oauth_timestamp="1687621205", 
+# [v] oauth_consumer_key="IQKbtAYlXLripLGPWd0HUA", 
+# oauth_token="1672630233671823361-iOiY4xgK8K3oG2rl4QevBOWktkCXPI", 
+# [v] oauth_version="1.0", 
+# [v] oauth_signature_method="HMAC-SHA1"
+
+## PARAMS ##
+
+
+def get_random_string(length):
+    letters = string.ascii_lowercase
+    return ''.join(random.choice(letters) for i in range(length))
+
+def make_query_params(params):
+    return '&'.join(f'{k}={v}' for k, v in sorted(params.items()))
+
+def get_base_string(method, params, url):
+    return '&'.join(map(urllib.parse.quote, [method.upper(), url, params]))
+
+def OAuth1Signature(consumerKey, consumerSecret, method='GET', queryParams={}, url='', nonce= "44189BB8-FA49-41B6-B9AB-2EC7D46416C8", unixTimestamp=int(time.time())):
+    oauthParams = {
+        **queryParams,
+        'oauth_consumer_key': consumerKey,
+      #   
+        'oauth_signature_method': 'HMAC-SHA1',
+        'oauth_timestamp': unixTimestamp,
+        'oauth_nonce': nonce,
+        'oauth_version': '1.0',
+    }
+
+    params = make_query_params(oauthParams)
+    baseString = get_base_string(method, params, url)
+
+    digest_maker = hmac.new(bytes(urllib.parse.quote(consumerSecret)+'&', 'utf-8'), bytes(baseString, 'utf-8'), hashlib.sha1)
+    oauthSignature = urllib.parse.quote(b64encode(digest_maker.digest()).decode())
+
+    signedParams = {
+        **oauthParams,
+        'oauth_signature': oauthSignature,
+    }
+
+# print('OAuth oauth_consumer_key="' + oauth_consumer_key + '",oauth_signature_method="HMAC-SHA1",oauth_timestamp="' + str(s["ts"]) + '",oauth_nonce="' + s["nonce"] + '",oauth_version="1.0",oauth_signature="' + s['signature'] + '"')
+
+    return {
+        'params': signedParams,
+        'signature': oauthSignature,
+        'nonce': nonce,
+        'ts' : unixTimestamp
+    }
+
+def get_guest_token():
+
+    url = "https://api.twitter.com/1.1/guest/activate.json"
+    headers = { 'Authorization': 'Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA' }
+
+    response = requests.request("POST", url, headers=headers, data={})
+
+    return json.loads(response.text)["guest_token"]
+
+
+oauth_consumer_key = '3rJOl1ODzm9yZy63FACdg'
+oauth_consumer_secret = "5jPoQ5kQvMJFDYRNE8bQ4rHuds4xJqhvgNJM4awaE8"
+
+oauth = OAuth1Session(oauth_consumer_key, client_secret=oauth_consumer_secret).fetch_request_token("https://api.twitter.com/oauth/request_token")
+
+oauth_token = oauth["oauth_token"]
+oauth_token = get_guest_token() + "-" + oauth_token
+
+#oauth_token_secret = oauth["oauth_token_secret"]
+
+s = OAuth1Signature(
+	oauth_consumer_key,
+	oauth_consumer_secret,
+	'GET',
+    {},
+	'https://api.twitter.com/graphql/pAyVFRiMFMp9KCfffF7LHg/HomeLatestTimeline',
+)
+
+
+
+#test_auth = 'OAuth oauth_signature="' + s["signature"] + '", oauth_nonce="' + s["nonce"] + '", oauth_timestamp="' + str(s["ts"]) + '", oauth_consumer_key="' + oauth_consumer_key + '", oauth_token="' + oauth_token + '", oauth_version="1.0", oauth_signature_method="HMAC-SHA1"'
+
+#print(test_auth)
+
+
+
+# my attmept
+# OAuth oauth_signature="b7Nc/MdL6PTAbrLoIPjFb7l4VVo%3D", oauth_nonce="44189BB8-FA49-41B6-B9AB-2EC7D46416C8", oauth_timestamp="1687688752", oauth_consumer_key="3rJOl1ODzm9yZy63FACdg", oauth_token="1672913995685142528-JJg-OgAAAAAACIKFAAABiPIWrGk", oauth_version="1.0", oauth_signature_method="HMAC-SHA1"
+
+# hard coded results
+
+print('OAuth oauth_consumer_key="' + oauth_consumer_key + '",oauth_signature_method="HMAC-SHA1",oauth_timestamp="' + str(s["ts"]) + '",oauth_nonce="' + s["nonce"] + '",oauth_version="1.0",oauth_signature="' + s['signature'] + '"')
+
+# OAuth oauth_consumer_key="3rJOl1ODzm9yZy63FACdg",oauth_signature_method="HMAC-SHA1",oauth_timestamp="1687689062",oauth_nonce="44189BB8-FA49-41B6-B9AB-2EC7D46416C8",oauth_version="1.0",oauth_signature="IknusBMitSRaoL4QN1HcThEoHs0%3D"
+# OAuth oauth_consumer_key="3rJOl1ODzm9yZy63FACdg",oauth_signature_method="HMAC-SHA1",oauth_timestamp="1687688892",oauth_nonce="64OfPCZir21",oauth_version="1.0",oauth_signature="HOc0S%2F7XgJ%2FBICEdw1cjJDDlSAc%3D"
