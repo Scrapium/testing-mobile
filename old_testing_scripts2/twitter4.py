@@ -108,6 +108,17 @@ def twitter(search_string, cursor = False):
     }
 
 
+    print(oauth_params)
+
+    # [x]OAuth oauth_signature="Dba454ZFV90adRA4h8yjuLjAlq4%3D", 
+    # [v]oauth_nonce="E6642669-3C46-4FA8-9964-DDBA33CBE445", 
+    # [v]oauth_timestamp="1688300469", 
+    # [v]oauth_consumer_key="IQKbtAYlXLripLGPWd0HUA", 
+    # oauth_token="1673412470965170182-Ep69yeiJSpx5BGRFJkXXMwURLDL6as", 
+    # [v]oauth_version="1.0", 
+    # [v]oauth_signature_method="HMAC-SHA1"
+
+
     # Merge all parameters and sort them
     all_params = OrderedDict(sorted({**params, **oauth_params}.items()))
 
@@ -132,6 +143,10 @@ def twitter(search_string, cursor = False):
     headers['Authorization'] = auth_header
 
 
+
+
+
+    print(headers['Authorization'])
 
 
     # Create final URL

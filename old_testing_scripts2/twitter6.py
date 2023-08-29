@@ -42,41 +42,40 @@ def str_to_dict(encoded_str):
 def twitter(search_string, cursor = False):
     get_parameters = {
         "features": {
-            "graphql_unified_card_enabled": True,
-            "tweetypie_unmention_optimization_enabled": True,
-            "view_counts_everywhere_api_enabled": True,
-            "unified_cards_ad_metadata_container_dynamic_card_content_query_enabled": True,
-            "freedom_of_speech_not_reach_fetch_enabled": True,
-            "trusted_friends_api_enabled": True,
-            "tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled": False,
-            "birdwatch_consumption_enabled": False,
-            "tweet_with_visibility_results_prefer_gql_tweet_interstitials_enabled": True,
-            "profile_foundations_has_spaces_graphql_enabled": False,
-            "ios_notifications_replies_mentions_device_follow_enabled": False,
-            "rito_safety_mode_features_enabled": False,
-            "tweet_awards_tweet_api_enabled": False,
-            "c9s_tweet_anatomy_moderator_badge_enabled": False,
-            "tweet_with_visibility_results_prefer_gql_soft_interventions_enabled": True,
-        },
+                "graphql_unified_card_enabled":True,
+                "tweetypie_unmention_optimization_enabled":True,
+                "view_counts_everywhere_api_enabled":True,
+                "unified_cards_ad_metadata_container_dynamic_card_content_query_enabled":True,
+                "freedom_of_speech_not_reach_fetch_enabled":True,
+                "trusted_friends_api_enabled":True,
+                "tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled":False,
+                "birdwatch_consumption_enabled":False,
+                "tweet_with_visibility_results_prefer_gql_tweet_interstitials_enabled":True,
+                "profile_foundations_has_spaces_graphql_enabled":False,
+                "ios_notifications_replies_mentions_device_follow_enabled":False,
+                "rito_safety_mode_features_enabled":False,
+                "tweet_awards_tweet_api_enabled":False,
+                "c9s_tweet_anatomy_moderator_badge_enabled": False,
+                "tweet_with_visibility_results_prefer_gql_soft_interventions_enabled":True
+            },
         "variables": {
-            "include_community_tweet_relationship": False,
-            "include_dm_muting": False,
-            "product": "Top",
-            "include_tweet_quick_promote_eligibility": False,
-            "include_professional": False,
-            "skip_author_community_relationship": False,
-            "include_is_member": False,
-            "include_conversation_context": False,
-            "include_reply_device_follow": False,
-            "include_unmention_info_override": False,
-            "query_source": "typed_query",
-            "is_member_target_user_id": "0",
-            "raw_query": search_string,
+            "raw_query": search_string.replace(" ", "+"),
+            "include_community_tweet_relationship":False,
+            "product":"Top","include_tweet_quick_promote_eligibility":False,
+            "include_professional":False,
+            "include_conversation_context":False,
+            "skip_author_community_relationship":False,
+            "include_is_member":False,
+            "include_reply_device_follow":False,
+            "include_unmention_info_override":False,
+            "query_source":"typed_query",
+            "is_member_target_user_id":"0",
+            "include_dm_muting":False
         },
     }
 
     if(cursor != False):
-        get_parameters["variables"][cursor] = cursor
+        get_parameters["variables"]["cursor"] = cursor
 
 
     encoded_str = dict_to_str(get_parameters)
@@ -96,6 +95,7 @@ def twitter(search_string, cursor = False):
     # Define headers
     headers = {
         'User-Agent': 'Twitter-iPhone/9.63 iOS/15.7.6 (Apple;iPhone8,4;;;;;1;2015)',
+        'Cookie': 'guest_id=v1%3A168807056057052843'
     }
 
     # Parameters required for OAuth
@@ -106,6 +106,18 @@ def twitter(search_string, cursor = False):
         'oauth_timestamp': str(int(time.time())),
         'oauth_version': '1.0'
     }
+
+
+
+
+    # [x]OAuth oauth_signature="Dba454ZFV90adRA4h8yjuLjAlq4%3D", 
+    # [v]oauth_nonce="E6642669-3C46-4FA8-9964-DDBA33CBE445", 
+    # [v]oauth_timestamp="1688300469", 
+    # [v]oauth_consumer_key="IQKbtAYlXLripLGPWd0HUA", 
+    # oauth_token="1673412470965170182-Ep69yeiJSpx5BGRFJkXXMwURLDL6as", 
+    # [v]oauth_version="1.0", 
+    # [v]oauth_signature_method="HMAC-SHA1"
+
 
     # Merge all parameters and sort them
     all_params = OrderedDict(sorted({**params, **oauth_params}.items()))
@@ -126,9 +138,19 @@ def twitter(search_string, cursor = False):
     # Add the signature to the OAuth parameters
     oauth_params['oauth_signature'] = signature.decode('utf-8')
 
+
+    print(oauth_params)
+
     # Include OAuth parameters to the headers
     auth_header = 'OAuth ' + ', '.join(['{}="{}"'.format(quote_plus(k), quote_plus(v)) for k, v in oauth_params.items()])
-    headers['Authorization'] = auth_header
+    #headers['Authorization'] = auth_header
+
+
+
+
+
+    print(headers['Authorization'])
+
 
     # Create final URL
     final_url = urlunsplit((url_parts.scheme, url_parts.netloc, url_parts.path, urlencode(params), url_parts.fragment))
@@ -138,6 +160,7 @@ def twitter(search_string, cursor = False):
 
     # Handle the response
     if response.status_code == 200:
+        print("\n")
         print('Request was successful')
         data = json.loads(response.text)
         #print(json.dumps(data, indent=4))
@@ -145,8 +168,11 @@ def twitter(search_string, cursor = False):
     else:
         print(response.text)
         print(f'Request failed with status code {response.status_code}')
+        if(response.status_code == 429 and response.text == "Rate limit exceeded\n"):
+            print("RATE LIMIT EXCEEDED")
+        return False
+    
 
-
-data = twitter("jake")
+data = twitter("$btc")
 
 print(data)
